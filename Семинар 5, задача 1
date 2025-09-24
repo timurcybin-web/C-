@@ -1,0 +1,38 @@
+using System;
+
+public class BankAccount
+{
+    private int _balance;
+
+    public int Balance
+    { get => Balance; }
+
+    public void Deposit(int amount)
+    {
+        if (amount > 0)
+        {
+            _balance += amount;
+            Console.WriteLine($"Балланс пополнен на {amount}");
+        }
+    }
+    public void Withdraw(int amount)
+    {
+        if (amount > 0) 
+        {
+            _balance -= amount;
+            Console.WriteLine($"Снято {amount}");
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            BankAccount account = new BankAccount();
+            account.Deposit(1000);
+            account.Withdraw(500);
+            account.Withdraw(500);
+            Console.WriteLine($"Итоговый балланс {account.Balance}");
+        }
+    }
+}
