@@ -1,0 +1,51 @@
+using System;
+
+class SimpleIntArray
+{
+    private int[] array;
+    public SimpleIntArray(int size = 10)
+    {
+        array = new int[size];
+    }
+    public int this[int index]
+    {
+        get
+        {
+            if (index < 0 || index >= array.Length)
+                throw new IndexOutOfRangeException("Индекс выходит за пределы массива.");
+            return array[index];
+        }
+        set
+        {
+            if (index < 0 || index >= array.Length)
+                throw new IndexOutOfRangeException("Индекс выходит за пределы массива.");
+            array[index] = value;
+        }
+    }
+    public int Length => array.Length;
+}
+class Program
+{
+    static void Main()
+    {
+        SimpleIntArray myArray = new SimpleIntArray(10);
+
+        for (int i = 0; i < myArray.Length; i++)
+        {
+            myArray[i] = i * 2;
+        }
+
+        for (int i = 0; i < myArray.Length; i++)
+        {
+            Console.WriteLine($"Элемент {i}: {myArray[i]}");
+        }
+        try
+        {
+            Console.WriteLine(myArray[20]);
+        }
+        catch (IndexOutOfRangeException ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+}
