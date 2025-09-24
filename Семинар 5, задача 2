@@ -1,0 +1,32 @@
+using System;
+
+public class User
+{
+    public string Email { get; set; }
+    private int _age;
+    public int Age 
+    { 
+        get => _age;
+        set
+        {
+            if (value > 0 && value < 150)
+                _age = value;
+            else { throw new ArgumentException("Невозможный возраст");
+                }
+            }
+        }
+    public User(string email, int age)
+    {
+        Email = email;
+        Age = age;
+    }
+}
+class Program
+{
+    static void Main()
+    {
+        User u1 = new User("timur@mail.com", 20);
+        Console.WriteLine(u1.Email);
+        Console.WriteLine(u1.Age);
+    }
+}
