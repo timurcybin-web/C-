@@ -1,0 +1,17 @@
+using System;
+
+public class Rectangle
+{
+    public double Width { get; init; }
+    public double Height { get; init; }
+    public double Area => Width* Height;
+}
+class Program
+{
+    static void Main()
+    {
+        Rectangle rectangle = new Rectangle { Width = 10, Height = 10 };
+        Console.WriteLine($"Длина {rectangle.Height}, шрина {rectangle.Width}");
+        Console.WriteLine($"Площадь { rectangle.Area}");
+    }
+}
