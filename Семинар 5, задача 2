@@ -11,7 +11,7 @@ public class User
         {
             if (value > 0 && value < 150)
                 _age = value;
-            else { throw new ArgumentException("Невозможный возраст");
+            else { throw new ArgumentException("Недопустимый возраст");
                 }
             }
         }
