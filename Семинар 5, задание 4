@@ -28,24 +28,10 @@ class Program
 {
     static void Main()
     {
-        SimpleIntArray myArray = new SimpleIntArray(10);
-
-        for (int i = 0; i < myArray.Length; i++)
+        SimpleIntArray arr = new SimpleIntArray(10);
+        for (int i = 0; i < arr.Length; i++)
         {
-            myArray[i] = i * 2;
-        }
-
-        for (int i = 0; i < myArray.Length; i++)
-        {
-            Console.WriteLine($"Элемент {i}: {myArray[i]}");
-        }
-        try
-        {
-            Console.WriteLine(myArray[20]);
-        }
-        catch (IndexOutOfRangeException ex)
-        {
-            Console.WriteLine($"Ошибка: {ex.Message}");
+            Console.WriteLine($"{i}: {arr[i]}");
         }
     }
 }
