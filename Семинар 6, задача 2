@@ -1,0 +1,82 @@
+using System;
+
+namespace AccessControlSystem
+{
+    // Флаговое перечисление прав пользователя
+    [Flags]
+    enum UserPermissions
+    {
+        None = 0,
+        Read = 1,
+        Write = 2,
+        Delete = 4,
+        Execute = 8,
+        ReadWrite = Read | Write
+    }
+
+    // Класс пользователя
+    class User
+    {
+        public string Name { get; set; }
+        public UserPermissions Permissions { get; set; }
+
+        public User(string name, UserPermissions permissions)
+        {
+            Name = name;
+            Permissions = permissions;
+        }
+
+        // Проверка наличия права
+        public bool HasPermission(UserPermissions permission)
+        {
+            return (Permissions & permission) == permission;
+        }
+
+        // Добавление права
+        public void AddPermission(UserPermissions permission)
+        {
+            Permissions |= permission;
+        }
+
+        // Удаление права
+        public void RemovePermission(UserPermissions permission)
+        {
+            Permissions &= ~permission;
+        }
+
+        // Отображение информации о пользователе
+        public void DisplayInfo()
+        {
+            Console.WriteLine($"Пользователь: {Name}, Права: {Permissions}");
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Создаем 3 пользователей
+            User user1 = new User("Алиса", UserPermissions.Read);
+            User user2 = new User("Боб", UserPermissions.ReadWrite);
+            User user3 = new User("Чарли", UserPermissions.Read | UserPermissions.Write | UserPermissions.Delete);
+
+            user1.DisplayInfo();
+            user2.DisplayInfo();
+            user3.DisplayInfo();
+
+            Console.WriteLine("\n--- Проверка прав ---");
+            Console.WriteLine($"У {user1.Name} есть право Write? {user1.HasPermission(UserPermissions.Write)}");
+            Console.WriteLine($"У {user2.Name} есть право Write? {user2.HasPermission(UserPermissions.Write)}");
+
+            Console.WriteLine("\n--- Добавление прав ---");
+            user1.AddPermission(UserPermissions.Write);
+            user1.DisplayInfo();
+
+            Console.WriteLine("\n--- Удаление прав ---");
+            user3.RemovePermission(UserPermissions.Delete);
+            user3.DisplayInfo();
+
+            Console.ReadLine();
+        }
+    }
+}
