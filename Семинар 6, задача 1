@@ -1,0 +1,80 @@
+using System;
+
+namespace OrderStatusSystem
+{
+    // Перечисление статусов заказа
+    enum OrderStatus
+    {
+        New = 0,
+        Processing = 1,
+        Shipped = 2,
+        Delivered = 3,
+        Cancelled = 4
+    }
+
+    // Класс заказа
+    class Order
+    {
+        public int Id { get; set; }
+        public string ProductName { get; set; }
+        public OrderStatus Status { get; set; }
+
+        // Метод отображения информации о заказе
+        public void DisplayOrderInfo()
+        {
+            Console.WriteLine($"Заказ №{Id}: {ProductName}, статус: {Status}");
+
+            switch (Status)
+            {
+                case OrderStatus.New:
+                    Console.WriteLine("Заказ только что создан.");
+                    break;
+                case OrderStatus.Processing:
+                    Console.WriteLine("Заказ обрабатывается.");
+                    break;
+                case OrderStatus.Shipped:
+                    Console.WriteLine("Заказ отправлен.");
+                    break;
+                case OrderStatus.Delivered:
+                    Console.WriteLine("Заказ доставлен.");
+                    break;
+                case OrderStatus.Cancelled:
+                    Console.WriteLine("Заказ отменен.");
+                    break;
+                default:
+                    Console.WriteLine("Неизвестный статус.");
+                    break;
+            }
+            Console.WriteLine();
+        }
+
+        // Метод проверки возможности отмены заказа
+        public bool CanCancelOrder()
+        {
+            return Status == OrderStatus.New || Status == OrderStatus.Processing;
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Создаем 3 заказа с разными статусами
+            Order order1 = new Order { Id = 1, ProductName = "Ноутбук", Status = OrderStatus.New };
+            Order order2 = new Order { Id = 2, ProductName = "Смартфон", Status = OrderStatus.Shipped };
+            Order order3 = new Order { Id = 3, ProductName = "Наушники", Status = OrderStatus.Delivered };
+
+            // Отображаем информацию
+            order1.DisplayOrderInfo();
+            Console.WriteLine($"Можно отменить заказ? {order1.CanCancelOrder()}\n");
+
+            order2.DisplayOrderInfo();
+            Console.WriteLine($"Можно отменить заказ? {order2.CanCancelOrder()}\n");
+
+            order3.DisplayOrderInfo();
+            Console.WriteLine($"Можно отменить заказ? {order3.CanCancelOrder()}\n");
+
+            Console.ReadLine();
+        }
+    }
+}
