@@ -1,0 +1,57 @@
+using System;
+using System.Globalization;
+
+namespace DateTimeFormatting
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8; // для корректного вывода русских букв
+
+            Console.WriteLine("Введите дату и время в формате dd.MM.yyyy HH:mm (например, 15.01.2024 14:30):");
+            string input = Console.ReadLine();
+
+            // Парсим дату
+            if (DateTime.TryParseExact(input, "dd.MM.yyyy HH:mm", 
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
+            {
+                Console.WriteLine("\nРезультаты:");
+
+                // 1) ISO-подобный формат
+                string isoFormat = dateTime.ToString("yyyy-MM-dd");
+                Console.WriteLine($"ISO формат: {isoFormat}");
+
+                // 2) Полный формат с месяцем словами
+                string fullFormat = dateTime.ToString("dd MMMM yyyy 'года,' HH:mm", new CultureInfo("ru-RU"));
+                Console.WriteLine($"Полный формат: {fullFormat}");
+
+                // 3) Относительное время
+                string relativeTime = GetRelativeTime(dateTime);
+                Console.WriteLine($"Относительное время: {relativeTime}");
+            }
+            else
+            {
+                Console.WriteLine("Ошибка: неверный формат даты!");
+            }
+
+            Console.ReadLine();
+        }
+
+        // Метод для вычисления относительного времени
+        static string GetRelativeTime(DateTime dateTime)
+        {
+            DateTime now = DateTime.Now;
+            TimeSpan diff = now.Date - dateTime.Date;
+
+            if (diff.Days == 0)
+                return $"Сегодня, {dateTime:HH:mm}";
+            else if (diff.Days == 1)
+                return $"Вчера, {dateTime:HH:mm}";
+            else if (diff.Days > 1)
+                return $"{diff.Days} дней назад, {dateTime:HH:mm}";
+            else
+                return $"В будущем: {dateTime:dd.MM.yyyy HH:mm}";
+        }
+    }
+}
