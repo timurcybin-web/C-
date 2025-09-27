@@ -1,0 +1,109 @@
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        Random rnd = new Random();
+
+        int[,] A = new int[4, 4];
+        int[,] B = new int[4, 4];
+
+        // Заполняем матрицы случайными числами
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+            {
+                A[i, j] = rnd.Next(1, 10);
+                B[i, j] = rnd.Next(1, 10);
+            }
+
+        Console.WriteLine("Матрица A:");
+        PrintMatrix(A);
+        Console.WriteLine("Матрица B:");
+        PrintMatrix(B);
+
+        // Умножение матриц
+        int[,] C = MultiplyMatrices(A, B);
+        Console.WriteLine("Матрица C = A * B:");
+        PrintMatrix(C);
+
+        // Проверка симметричности матрицы A
+        Console.WriteLine(IsSymmetric(A)
+            ? "Матрица A симметрична"
+            : "Матрица A не симметрична");
+
+        // Поворот матрицы A на 90 градусов
+        int[,] Rotated = Rotate90(A);
+        Console.WriteLine("Матрица A, повернутая на 90 градусов:");
+        PrintMatrix(Rotated);
+
+        // Вычисление определителя подматрицы 3x3 (первые 3 строки и столбца)
+        int[,] SubMatrix = GetSubMatrix(A, 3);
+        Console.WriteLine("Подматрица 3x3 из A:");
+        PrintMatrix(SubMatrix);
+        int det = Determinant3x3(SubMatrix);
+        Console.WriteLine($"Определитель подматрицы: {det}");
+    }
+
+    static void PrintMatrix(int[,] M)
+    {
+        for (int i = 0; i < M.GetLength(0); i++)
+        {
+            for (int j = 0; j < M.GetLength(1); j++)
+                Console.Write(M[i, j].ToString("D2") + " ");
+            Console.WriteLine();
+        }
+        Console.WriteLine();
+    }
+
+    static int[,] MultiplyMatrices(int[,] A, int[,] B)
+    {
+        int n = A.GetLength(0);
+        int[,] C = new int[n, n];
+
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                for (int k = 0; k < n; k++)
+                    C[i, j] += A[i, k] * B[k, j];
+
+        return C;
+    }
+
+    static bool IsSymmetric(int[,] M)
+    {
+        int n = M.GetLength(0);
+        for (int i = 0; i < n; i++)
+            for (int j = i + 1; j < n; j++)
+                if (M[i, j] != M[j, i]) return false;
+        return true;
+    }
+
+    static int[,] Rotate90(int[,] M)
+    {
+        int n = M.GetLength(0);
+        int[,] R = new int[n, n];
+
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                R[j, n - 1 - i] = M[i, j];
+
+        return R;
+    }
+
+    static int[,] GetSubMatrix(int[,] M, int size)
+    {
+        int[,] Sub = new int[size, size];
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                Sub[i, j] = M[i, j];
+        return Sub;
+    }
+
+    static int Determinant3x3(int[,] M)
+    {
+        return
+            M[0, 0] * (M[1, 1] * M[2, 2] - M[1, 2] * M[2, 1]) -
+            M[0, 1] * (M[1, 0] * M[2, 2] - M[1, 2] * M[2, 0]) +
+            M[0, 2] * (M[1, 0] * M[2, 1] - M[1, 1] * M[2, 0]);
+    }
+}
