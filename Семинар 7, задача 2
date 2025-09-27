@@ -9,7 +9,7 @@ class Program
         int[,] A = new int[4, 4];
         int[,] B = new int[4, 4];
 
-        // Заполняем матрицы случайными числами
+        
         for (int i = 0; i < 4; i++)
             for (int j = 0; j < 4; j++)
             {
@@ -22,22 +22,20 @@ class Program
         Console.WriteLine("Матрица B:");
         PrintMatrix(B);
 
-        // Умножение матриц
         int[,] C = MultiplyMatrices(A, B);
         Console.WriteLine("Матрица C = A * B:");
         PrintMatrix(C);
 
-        // Проверка симметричности матрицы A
+        
         Console.WriteLine(IsSymmetric(A)
             ? "Матрица A симметрична"
             : "Матрица A не симметрична");
 
-        // Поворот матрицы A на 90 градусов
         int[,] Rotated = Rotate90(A);
         Console.WriteLine("Матрица A, повернутая на 90 градусов:");
         PrintMatrix(Rotated);
 
-        // Вычисление определителя подматрицы 3x3 (первые 3 строки и столбца)
+        
         int[,] SubMatrix = GetSubMatrix(A, 3);
         Console.WriteLine("Подматрица 3x3 из A:");
         PrintMatrix(SubMatrix);
