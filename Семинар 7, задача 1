@@ -1,0 +1,57 @@
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        Random rnd = new Random();
+        int[] arr = new int[20];
+
+
+        for (int i = 0; i < arr.Length; i++)
+        {
+            arr[i] = rnd.Next(-50, 51);
+        }
+
+        Console.WriteLine("Массив:");
+        Console.WriteLine(string.Join(" ", arr));
+
+        
+        int positive = 0, negative = 0, zero = 0;
+        foreach (int num in arr)
+        {
+            if (num > 0) positive++;
+            else if (num < 0) negative++;
+            else zero++;
+        }
+
+        Console.WriteLine($"\nПоложительных: {positive}, Отрицательных: {negative}, Нулевых: {zero}");
+
+        
+        int maxLen = 0, currentLen = 0;
+        foreach (int num in arr)
+        {
+            if (num > 0)
+            {
+                currentLen++;
+                if (currentLen > maxLen) maxLen = currentLen;
+            }
+            else
+            {
+                currentLen = 0;
+            }
+        }
+
+        Console.WriteLine($"Наибольшая длина последовательности положительных: {maxLen}");
+
+        
+        Console.WriteLine("Индексы локальных минимумов:");
+        for (int i = 1; i < arr.Length - 1; i++)
+        {
+            if (arr[i] < arr[i - 1] && arr[i] < arr[i + 1])
+            {
+                Console.WriteLine($"Индекс {i} (значение {arr[i]})");
+            }
+        }
+    }
+}
