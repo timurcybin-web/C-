@@ -1,0 +1,146 @@
+using System;
+
+namespace LibraryCatalogBasic
+{
+    // Базовый класс книги
+    class Book
+    {
+        public string Title;    // Название
+        public string Author;   // Автор
+        public string Genre;    // Жанр
+        public int Year;        // Год
+        public string Type;     // Тип (Печатная / Электронная)
+
+        public Book(string title, string author, string genre, int year, string type)
+        {
+            Title = title;
+            Author = author;
+            Genre = genre;
+            Year = year;
+            Type = type;
+        }
+
+        public virtual string GetInfo()
+        {
+            return $"{Title,-20} | {Author,-15} | {Genre,-12} | {Year,-6} | {Type,-10}";
+        }
+    }
+
+    // Производный класс для печатных книг
+    class PrintedBook : Book
+    {
+        public int Copies; // количество экземпляров
+
+        public PrintedBook(string title, string author, string genre, int year, int copies)
+            : base(title, author, genre, year, "Печатная")
+        {
+            Copies = copies;
+        }
+
+        public override string GetInfo()
+        {
+            return base.GetInfo() + $" | Кол-во экз.: {Copies}";
+        }
+    }
+
+    // Производный класс для электронных книг
+    class EBook : Book
+    {
+        public string LicenseEnd; // дата окончания лицензии
+
+        public EBook(string title, string author, string genre, int year, string licenseEnd)
+            : base(title, author, genre, year, "Электронная")
+        {
+            LicenseEnd = licenseEnd;
+        }
+
+        public override string GetInfo()
+        {
+            return base.GetInfo() + $" | Лицензия до: {LicenseEnd}";
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+            // Ввод количества книг
+            Console.Write("Введите количество книг: ");
+            int N = Convert.ToInt32(Console.ReadLine());
+
+            Book[] books = new Book[N];
+
+            // Ввод данных
+            for (int i = 0; i < N; i++)
+            {
+                Console.WriteLine($"\nКнига {i + 1}:");
+                Console.Write("Название: ");
+                string title = Console.ReadLine();
+
+                Console.Write("Автор: ");
+                string author = Console.ReadLine();
+
+                Console.Write("Жанр: ");
+                string genre = Console.ReadLine();
+
+                Console.Write("Год: ");
+                int year = Convert.ToInt32(Console.ReadLine());
+
+                Console.Write("Тип (Печатная/Электронная): ");
+                string type = Console.ReadLine();
+
+                if (type.ToLower() == "печатная")
+                {
+                    Console.Write("Количество экземпляров: ");
+                    int copies = Convert.ToInt32(Console.ReadLine());
+                    books[i] = new PrintedBook(title, author, genre, year, copies);
+                }
+                else
+                {
+                    Console.Write("Дата окончания лицензии (дд.мм.гггг): ");
+                    string licenseEnd = Console.ReadLine();
+                    books[i] = new EBook(title, author, genre, year, licenseEnd);
+                }
+            }
+
+            // Табличный вывод
+            Console.WriteLine("\nКаталог библиотеки:");
+            Console.WriteLine("Название              | Автор           | Жанр         | Год    | Тип        | Доп. сведения");
+            Console.WriteLine(new string('-', 100));
+
+            for (int i = 0; i < N; i++)
+            {
+                Console.WriteLine(books[i].GetInfo());
+            }
+
+            // Поиск книги по автору
+            Console.Write("\nВведите автора для поиска: ");
+            string searchAuthor = Console.ReadLine();
+
+            Console.WriteLine("\nКниги этого автора:");
+            for (int i = 0; i < N; i++)
+            {
+                if (books[i].Author == searchAuthor)
+                    Console.WriteLine(books[i].GetInfo());
+            }
+
+            // Поиск самой старой и новой книги
+            Book oldest = books[0];
+            Book newest = books[0];
+
+            for (int i = 1; i < N; i++)
+            {
+                if (books[i].Year < oldest.Year) oldest = books[i];
+                if (books[i].Year > newest.Year) newest = books[i];
+            }
+
+            Console.WriteLine("\nСамая старая книга:");
+            Console.WriteLine(oldest.GetInfo());
+
+            Console.WriteLine("\nСамая новая книга:");
+            Console.WriteLine(newest.GetInfo());
+        }
+    }
+}
