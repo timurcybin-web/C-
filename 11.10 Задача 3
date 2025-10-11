@@ -1,0 +1,58 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+class Animal
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+
+    public Animal(string name, int age)
+    {
+        Name = name;
+        Age = age;
+    }
+
+    public override string ToString()
+    {
+        return $"{Name}, {Age} лет";
+    }
+}
+
+class AnimalList : IEnumerable<Animal>
+{
+    private List<Animal> animals = new List<Animal>();
+
+    public void Add(Animal animal)
+    {
+        animals.Add(animal);
+    }
+
+    public IEnumerator<Animal> GetEnumerator()
+    {
+        // Можно просто вернуть перечислитель списка
+        return animals.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        // Явная реализация неуниверсального интерфейса
+        return GetEnumerator();
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        AnimalList list = new AnimalList();
+        list.Add(new Animal("Кошка", 3));
+        list.Add(new Animal("Собака", 5));
+        list.Add(new Animal("Попугай", 2));
+
+        foreach (Animal a in list)
+        {
+            Console.WriteLine(a);
+        }
+    }
+}
