@@ -42,3 +42,29 @@ class AnimalAgeComparer : IComparer<Animal>
 class Program
 {
     static void Main()
+    {
+        var animals = new List<Animal>
+        {
+            new Animal("Кот", 3),
+            new Animal("Собака", 5),
+            new Animal("Попугай", 2),
+            new Animal("Черепаха", 10)
+        };
+
+        Console.WriteLine("Исходный список:");
+        foreach (var a in animals)
+            Console.WriteLine(a);
+
+        // Сортировка по имени
+        animals.Sort(new AnimalNameComparer());
+        Console.WriteLine("\nСортировка по имени:");
+        foreach (var a in animals)
+            Console.WriteLine(a);
+
+        // Сортировка по возрасту
+        animals.Sort(new AnimalAgeComparer());
+        Console.WriteLine("\nСортировка по возрасту:");
+        foreach (var a in animals)
+            Console.WriteLine(a);
+    }
+}
