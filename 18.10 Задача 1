@@ -1,0 +1,199 @@
+using System;
+using System.Collections.Generic;
+
+namespace CacheExample
+{
+    // ==========================
+    // Интерфейс кэша
+    // ==========================
+    public interface ICache<TKey, TValue>
+    {
+        void Set(TKey key, TValue value);
+        TValue Get(TKey key);
+        void Remove(TKey key);
+    }
+
+    // ==========================
+    // FIFO Cache (First In, First Out)
+    // ==========================
+    public class FifoCache<TKey, TValue> : ICache<TKey, TValue>
+    {
+        private readonly int capacity;
+        private readonly Dictionary<TKey, TValue> cache;
+        private readonly Queue<TKey> order;
+
+        public FifoCache(int capacity)
+        {
+            if (capacity <= 0)
+                throw new ArgumentException("Capacity must be positive.");
+            this.capacity = capacity;
+            this.cache = new Dictionary<TKey, TValue>();
+            this.order = new Queue<TKey>();
+        }
+
+        public void Set(TKey key, TValue value)
+        {
+            if (cache.ContainsKey(key))
+            {
+                cache[key] = value;
+                return;
+            }
+
+            if (cache.Count >= capacity)
+            {
+                var oldestKey = order.Dequeue();
+                cache.Remove(oldestKey);
+            }
+
+            cache[key] = value;
+            order.Enqueue(key);
+        }
+
+        public TValue Get(TKey key)
+        {
+            if (!cache.ContainsKey(key))
+                throw new KeyNotFoundException($"Key '{key}' not found in cache.");
+            return cache[key];
+        }
+
+        public void Remove(TKey key)
+        {
+            if (cache.Remove(key))
+            {
+                var tempQueue = new Queue<TKey>();
+                foreach (var k in order)
+                    if (!k.Equals(key))
+                        tempQueue.Enqueue(k);
+                order.Clear();
+                foreach (var k in tempQueue)
+                    order.Enqueue(k);
+            }
+        }
+
+        public void PrintState()
+        {
+            Console.WriteLine("FIFO Cache state:");
+            foreach (var key in order)
+                Console.WriteLine($"  {key} = {cache[key]}");
+        }
+    }
+
+    // ==========================
+    // LRU Cache (Least Recently Used)
+    // ==========================
+    public class LruCache<TKey, TValue> : ICache<TKey, TValue>
+    {
+        private readonly int capacity;
+        private readonly Dictionary<TKey, LinkedListNode<(TKey key, TValue value)>> cache;
+        private readonly LinkedList<(TKey key, TValue value)> lruList;
+
+        public LruCache(int capacity)
+        {
+            if (capacity <= 0)
+                throw new ArgumentException("Capacity must be positive.");
+            this.capacity = capacity;
+            this.cache = new Dictionary<TKey, LinkedListNode<(TKey, TValue)>>();
+            this.lruList = new LinkedList<(TKey, TValue)>();
+        }
+
+        public void Set(TKey key, TValue value)
+        {
+            if (cache.TryGetValue(key, out var node))
+            {
+                lruList.Remove(node);
+                node.Value = (key, value);
+                lruList.AddFirst(node);
+            }
+            else
+            {
+                if (cache.Count >= capacity)
+                {
+                    var lru = lruList.Last.Value;
+                    cache.Remove(lru.key);
+                    lruList.RemoveLast();
+                }
+
+                var newNode = new LinkedListNode<(TKey, TValue)>((key, value));
+                lruList.AddFirst(newNode);
+                cache[key] = newNode;
+            }
+        }
+
+        public TValue Get(TKey key)
+        {
+            if (!cache.TryGetValue(key, out var node))
+                throw new KeyNotFoundException($"Key '{key}' not found in cache.");
+
+            lruList.Remove(node);
+            lruList.AddFirst(node);
+            return node.Value.value;
+        }
+
+        public void Remove(TKey key)
+        {
+            if (cache.TryGetValue(key, out var node))
+            {
+                lruList.Remove(node);
+                cache.Remove(key);
+            }
+        }
+
+        public void PrintState()
+        {
+            Console.WriteLine("LRU Cache state:");
+            foreach (var item in lruList)
+                Console.WriteLine($"  {item.key} = {item.value}");
+        }
+    }
+
+    // ==========================
+    // Демонстрация работы
+    // ==========================
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("=== FIFO Cache ===");
+            var fifo = new FifoCache<string, int>(3);
+            fifo.Set("one", 1);
+            fifo.Set("two", 2);
+            fifo.Set("three", 3);
+            fifo.PrintState();
+
+            Console.WriteLine($"Get(one): {fifo.Get("one")}");
+            fifo.Set("four", 4); // удаляет "one"
+            fifo.PrintState();
+
+            try
+            {
+                Console.WriteLine(fifo.Get("one"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Ошибка: {e.Message}");
+            }
+
+            Console.WriteLine("\n=== LRU Cache ===");
+            var lru = new LruCache<string, int>(3);
+            lru.Set("one", 1);
+            lru.Set("two", 2);
+            lru.Set("three", 3);
+            lru.PrintState();
+
+            Console.WriteLine($"Get(one): {lru.Get("one")}");
+            lru.PrintState();
+
+            lru.Set("four", 4); // удаляет "two"
+            lru.PrintState();
+
+            try
+            {
+                Console.WriteLine(lru.Get("two"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Ошибка: {e.Message}");
+            }
+        }
+    }
+}
