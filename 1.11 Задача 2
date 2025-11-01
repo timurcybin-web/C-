@@ -1,0 +1,69 @@
+using System;
+
+namespace ExceptionChainExample
+{
+    // Базовый класс исключений
+    public class MathOperationException : Exception
+    {
+        public MathOperationException(string message) : base(message) { }
+    }
+
+    // Исключение деления на ноль
+    public class DivisionByZeroException : MathOperationException
+    {
+        public DivisionByZeroException() : base("Деление на ноль невозможно") { }
+    }
+
+    // Исключение отрицательного подкоренного значения
+    public class NegativeRadicandException : MathOperationException
+    {
+        public NegativeRadicandException() : base("Невозможно извлечь корень из отрицательного числа") { }
+    }
+
+    // Статический класс калькулятора
+    public static class Calculator
+    {
+        public static double Divide(int a, int b)
+        {
+            if (b == 0)
+                throw new DivisionByZeroException();
+            return (double)a / b;
+        }
+
+        public static double SquareRoot(int a)
+        {
+            if (a < 0)
+                throw new NegativeRadicandException();
+            return Math.Sqrt(a);
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            try
+            {
+                // Вызовы, приводящие к исключениям
+                Console.WriteLine(Calculator.Divide(10, 0));
+                Console.WriteLine(Calculator.SquareRoot(-9));
+            }
+            catch (DivisionByZeroException ex)
+            {
+                Console.WriteLine($"Ошибка деления: {ex.Message}");
+            }
+            catch (NegativeRadicandException ex)
+            {
+                Console.WriteLine($"Ошибка извлечения корня: {ex.Message}");
+            }
+            catch (MathOperationException ex) when (ex.GetType().DeclaringType == typeof(Calculator))
+            {
+                Console.WriteLine($"Иная математическая ошибка: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Произошла непредвиденная ошибка");
+            }
+        }
+    }
+}
