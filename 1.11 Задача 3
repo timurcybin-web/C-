@@ -1,0 +1,139 @@
+using System;
+using System.IO;
+
+namespace GeometryBaseSystem
+{
+    // Базовый тип исключения
+    public class GeometryException : Exception
+    {
+        public int[] Parameters { get; private set; }
+
+        public GeometryException(string message, int[] parameters) : base(message)
+        {
+            Parameters = parameters;
+        }
+    }
+
+    // Производные исключения
+    public class TriangleException : GeometryException
+    {
+        public TriangleException(int[] parameters)
+            : base("Ошибка: невозможно построить треугольник с такими сторонами.", parameters)
+        { }
+    }
+
+    public class QuadrangleException : GeometryException
+    {
+        public QuadrangleException(int[] parameters)
+            : base("Ошибка: невозможно построить четырёхугольник с такими сторонами.", parameters)
+        { }
+    }
+
+    public class CircleException : GeometryException
+    {
+        public CircleException(int[] parameters)
+            : base("Ошибка: невозможно построить окружность с таким радиусом.", parameters)
+        { }
+    }
+
+    // Класс Triangle
+    public class Triangle
+    {
+        public Triangle(int a, int b, int c)
+        {
+            // Проверка правила треугольника
+            if (a + b <= c || a + c <= b || b + c <= a)
+                throw new TriangleException(new int[] { a, b, c });
+        }
+    }
+
+    // Класс Quadrangle
+    public class Quadrangle
+    {
+        public Quadrangle(int a, int b, int c, int d)
+        {
+            // Находим самую длинную сторону
+            int max = a;
+            if (b > max) max = b;
+            if (c > max) max = c;
+            if (d > max) max = d;
+
+            int sum = a + b + c + d - max;
+
+            if (max >= sum)
+                throw new QuadrangleException(new int[] { a, b, c, d });
+        }
+    }
+
+    // Класс Circle
+    public class Circle
+    {
+        public Circle(int radius)
+        {
+            if (radius <= 0)
+                throw new CircleException(new int[] { radius });
+        }
+    }
+
+    class Program
+    {
+        static void LogToFile(Exception ex)
+        {
+            string filePath = "geometry_log.txt";
+            StreamWriter writer = new StreamWriter(filePath, true);
+            writer.WriteLine("Дата: " + DateTime.Now);
+            writer.WriteLine("Тип ошибки: " + ex.GetType().Name);
+            writer.WriteLine("Сообщение: " + ex.Message);
+
+            GeometryException geoEx = ex as GeometryException;
+            if (geoEx != null)
+            {
+                writer.Write("Параметры: ");
+                for (int i = 0; i < geoEx.Parameters.Length; i++)
+                {
+                    writer.Write(geoEx.Parameters[i]);
+                    if (i < geoEx.Parameters.Length - 1) writer.Write(", ");
+                }
+                writer.WriteLine();
+            }
+
+            writer.WriteLine();
+            writer.Close();
+        }
+
+        static void Main()
+        {
+            try
+            {
+                Triangle t = new Triangle(3, 4, 10); // Ошибка
+            }
+            catch (TriangleException ex)
+            {
+                Console.WriteLine(ex.Message);
+                LogToFile(ex);
+            }
+
+            try
+            {
+                Quadrangle q = new Quadrangle(2, 3, 4, 15); // Ошибка
+            }
+            catch (QuadrangleException ex)
+            {
+                Console.WriteLine(ex.Message);
+                LogToFile(ex);
+            }
+
+            try
+            {
+                Circle c = new Circle(0); // Ошибка
+            }
+            catch (CircleException ex)
+            {
+                Console.WriteLine(ex.Message);
+                LogToFile(ex);
+            }
+
+            Console.WriteLine("Работа программы завершена. Проверьте файл geometry_log.txt.");
+        }
+    }
+}
