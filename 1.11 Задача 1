@@ -1,51 +1,53 @@
-#include <iostream>
-#include <stdexcept>
-
-using namespace std;
+using System;
 
 // Пользовательское исключение
-class InsufficientFundsException : public runtime_error {
-public:
-    InsufficientFundsException(double requested, double available)
-        : runtime_error("Ошибка: Недостаточно средств на счете. Запрашиваемая сумма: " 
-                        + to_string(requested) + ", доступно: " + to_string(available)) {}
-};
+class InsufficientFundsException : Exception
+{
+    public InsufficientFundsException(decimal requested, decimal available)
+        : base($"Ошибка: Недостаточно средств на счете. Запрашиваемая сумма: {requested}, доступно: {available}.") { }
+}
 
-// Класс банковского счета
-class BankAccount {
-private:
-    double balance;
+// Класс банковского счёта
+class BankAccount
+{
+    public decimal Balance { get; private set; }
 
-public:
-    BankAccount(double initialBalance) : balance(initialBalance) {}
-
-    double getBalance() const {
-        return balance;
+    public BankAccount(decimal initialBalance)
+    {
+        Balance = initialBalance;
     }
 
-    void withdraw(double amount) {
-        if (amount > balance) {
-            throw InsufficientFundsException(amount, balance);
+    public void Withdraw(decimal amount)
+    {
+        if (amount > Balance)
+        {
+            throw new InsufficientFundsException(amount, Balance);
         }
-        balance -= amount;
-        cout << "Операция успешна. Новый баланс: " << balance << endl;
+
+        Balance -= amount;
+        Console.WriteLine($"Операция успешна. Новый баланс: {Balance}");
     }
-};
+}
 
-int main() {
-    setlocale(LC_ALL, "Russian");
+class Program
+{
+    static void Main()
+    {
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        Console.Write("Введите начальный баланс: ");
+        decimal startBalance = decimal.Parse(Console.ReadLine());
+        BankAccount account = new BankAccount(startBalance);
 
-    BankAccount account(100.0);
+        Console.Write("Введите сумму для снятия: ");
+        decimal amount = decimal.Parse(Console.ReadLine());
 
-    double amount;
-    cout << "Введите сумму для снятия: ";
-    cin >> amount;
-
-    try {
-        account.withdraw(amount);
-    } catch (const InsufficientFundsException& e) {
-        cout << e.what() << endl;
+        try
+        {
+            account.Withdraw(amount);
+        }
+        catch (InsufficientFundsException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
     }
-
-    return 0;
 }
