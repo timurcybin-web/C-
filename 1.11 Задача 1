@@ -1,0 +1,51 @@
+#include <iostream>
+#include <stdexcept>
+
+using namespace std;
+
+// Пользовательское исключение
+class InsufficientFundsException : public runtime_error {
+public:
+    InsufficientFundsException(double requested, double available)
+        : runtime_error("Ошибка: Недостаточно средств на счете. Запрашиваемая сумма: " 
+                        + to_string(requested) + ", доступно: " + to_string(available)) {}
+};
+
+// Класс банковского счета
+class BankAccount {
+private:
+    double balance;
+
+public:
+    BankAccount(double initialBalance) : balance(initialBalance) {}
+
+    double getBalance() const {
+        return balance;
+    }
+
+    void withdraw(double amount) {
+        if (amount > balance) {
+            throw InsufficientFundsException(amount, balance);
+        }
+        balance -= amount;
+        cout << "Операция успешна. Новый баланс: " << balance << endl;
+    }
+};
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+
+    BankAccount account(100.0);
+
+    double amount;
+    cout << "Введите сумму для снятия: ";
+    cin >> amount;
+
+    try {
+        account.withdraw(amount);
+    } catch (const InsufficientFundsException& e) {
+        cout << e.what() << endl;
+    }
+
+    return 0;
+}
