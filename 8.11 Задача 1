@@ -1,0 +1,68 @@
+using System;
+using System.Reflection;
+
+// Создаем атрибут NameAttribute
+[AttributeUsage(AttributeTargets.Property)]
+public class NameAttribute : Attribute
+{
+    public string Description { get; }
+
+    public NameAttribute(string description)
+    {
+        Description = description;
+    }
+}
+
+// Создаем класс FirstClass с 10 свойствами
+public class FirstClass
+{
+    [Name("Первое свойство")]
+    public int First { get; set; }
+
+    [Name("Второе свойство")]
+    public string Second { get; set; }
+
+    [Name("Третье свойство")]
+    public double Third { get; set; }
+
+    [Name("Четвертое свойство")]
+    public bool Fourth { get; set; }
+
+    [Name("Пятое свойство")]
+    public DateTime Fifth { get; set; }
+
+    [Name("Шестое свойство")]
+    public char Sixth { get; set; }
+
+    [Name("Седьмое свойство")]
+    public decimal Seventh { get; set; }
+
+    [Name("Восьмое свойство")]
+    public float Eighth { get; set; }
+
+    [Name("Девятое свойство")]
+    public long Ninth { get; set; }
+
+    [Name("Десятое свойство")]
+    public byte Tenth { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        FirstClass obj = new FirstClass();
+
+        // Перебор свойств класса
+        foreach (PropertyInfo prop in typeof(FirstClass).GetProperties())
+        {
+            // Получаем атрибут
+            var attr = (NameAttribute)Attribute.GetCustomAttribute(prop, typeof(NameAttribute));
+
+            if (attr != null)
+            {
+                Console.WriteLine($"{prop.Name} - {attr.Description}");
+            }
+        }
+    }
+}
