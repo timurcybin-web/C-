@@ -1,0 +1,172 @@
+using System;
+using System.Collections.Generic;
+
+namespace MultiTargetLogger
+{
+    // 1. Перечисление уровней логов
+    public enum LogLevel
+    {
+        Debug,
+        Info,
+        Warning,
+        Error
+    }
+
+    // 2. Класс сообщения лога
+    public class LogMessage
+    {
+        public string Content { get; set; }
+        public LogLevel Level { get; set; }
+        public DateTime Timestamp { get; set; }
+
+        public LogMessage(string content, LogLevel level)
+        {
+            Content = content;
+            Level = level;
+            Timestamp = DateTime.Now;
+        }
+
+        public override string ToString()
+        {
+            return $"{Timestamp:HH:mm:ss} [{Level}] {Content}";
+        }
+    }
+
+    // 3. Интерфейс цели логирования
+    public interface ILogTarget
+    {
+        void Log(LogMessage message);
+        bool ShouldLog(LogMessage message); 
+    }
+
+    // 4. Класс Logger
+    public class Logger
+    {
+        private readonly Dictionary<string, ILogTarget> _targets = new();
+
+        public void AddTarget(string name, ILogTarget target)
+        {
+            if (!_targets.ContainsKey(name))
+                _targets[name] = target;
+        }
+
+        public void RemoveTarget(string name)
+        {
+            if (_targets.ContainsKey(name))
+                _targets.Remove(name);
+        }
+
+        public void Log(string message, LogLevel level)
+        {
+            var logMessage = new LogMessage(message, level);
+
+            foreach (var target in _targets.Values)
+            {
+                if (target.ShouldLog(logMessage))
+                {
+                    target.Log(logMessage);
+                }
+            }
+        }
+
+        // Удобные методы
+        public void Debug(string msg) => Log(msg, LogLevel.Debug);
+        public void Info(string msg) => Log(msg, LogLevel.Info);
+        public void Warning(string msg) => Log(msg, LogLevel.Warning);
+        public void Error(string msg) => Log(msg, LogLevel.Error);
+    }
+
+    // 5. Примеры целей
+
+    // --- ConsoleTarget ---
+    public class ConsoleTarget : ILogTarget
+    {
+        private readonly LogLevel _minLevel;
+
+        public ConsoleTarget(LogLevel minLevel)
+        {
+            _minLevel = minLevel;
+        }
+
+        public bool ShouldLog(LogMessage message)
+        {
+            return message.Level >= _minLevel;
+        }
+
+        public void Log(LogMessage message)
+        {
+            ConsoleColor color = message.Level switch
+            {
+                LogLevel.Debug => ConsoleColor.Gray,
+                LogLevel.Info => ConsoleColor.White,
+                LogLevel.Warning => ConsoleColor.Yellow,
+                LogLevel.Error => ConsoleColor.Red,
+                _ => ConsoleColor.White
+            };
+
+            var old = Console.ForegroundColor;
+            Console.ForegroundColor = color;
+            Console.WriteLine(message);
+            Console.ForegroundColor = old;
+        }
+    }
+
+    // --- MemoryTarget (хранит последние 100 сообщений) ---
+    public class MemoryTarget : ILogTarget
+    {
+        private readonly List<LogMessage> _messages = new();
+        private readonly int _capacity;
+        private readonly LogLevel _minLevel;
+
+        public MemoryTarget(LogLevel minLevel, int capacity = 100)
+        {
+            _minLevel = minLevel;
+            _capacity = capacity;
+        }
+
+        public bool ShouldLog(LogMessage message)
+        {
+            return message.Level >= _minLevel;
+        }
+
+        public void Log(LogMessage message)
+        {
+            if (_messages.Count >= _capacity)
+                _messages.RemoveAt(0);
+
+            _messages.Add(message);
+        }
+
+        public List<LogMessage> GetMessages() => new(_messages);
+
+        public void Clear() => _messages.Clear();
+    }
+
+    // ------------------- Пример использования ------------------------
+
+    class Program
+    {
+        static void Main()
+        {
+            Logger logger = new Logger();
+
+            logger.AddTarget("console", new ConsoleTarget(LogLevel.Debug));
+            logger.AddTarget("memory", new MemoryTarget(LogLevel.Warning));
+
+            logger.Debug("Debug info");
+            logger.Info("Info message");
+            logger.Warning("Warning occurred!");
+            logger.Error("Critical error!");
+
+            var mem = (MemoryTarget)logger.GetType()
+                .GetField("_targets", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .GetValue(logger) as Dictionary<string, ILogTarget>;
+
+            // Если нужно посмотреть сообщения:
+            var memoryTarget = mem["memory"] as MemoryTarget;
+            Console.WriteLine("\n--- MemoryTarget messages ---");
+            foreach (var m in memoryTarget.GetMessages())
+                Console.WriteLine(m);
+        }
+    }
+}
