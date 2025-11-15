@@ -1,0 +1,251 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+
+public enum LogLevel
+{
+    Debug,
+    Info,
+    Warning,
+    Error
+}
+
+public class LogMessage
+{
+    public string Content { get; set; }
+    public LogLevel Level { get; set; }
+    public DateTime Timestamp { get; set; }
+    public string Source { get; set; }
+
+    public LogMessage(string source, string content, LogLevel level)
+    {
+        Source = source;
+        Content = content;
+        Level = level;
+        Timestamp = DateTime.Now;
+    }
+}
+
+public interface ILogTarget
+{
+    void Log(LogMessage message);
+    bool ShouldLog(LogMessage message);
+}
+
+public class Logger
+{
+    private Dictionary<string, ILogTarget> targets = new Dictionary<string, ILogTarget>();
+
+    public event Action<LogMessage> MessageLogged;
+
+    public void AddTarget(string name, ILogTarget target)
+    {
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        
+        targets[name] = target;
+    }
+
+    public void RemoveTarget(string name)
+    {
+        targets.Remove(name);
+    }
+
+    public void Debug(string source, string content)
+    {
+        LogInternal(source, content, LogLevel.Debug);
+    }
+
+    public void Info(string source, string content)
+    {
+        LogInternal(source, content, LogLevel.Info);
+    }
+
+    public void Warning(string source, string content)
+    {
+        LogInternal(source, content, LogLevel.Warning);
+    }
+
+    public void Error(string source, string content)
+    {
+        LogInternal(source, content, LogLevel.Error);
+    }
+
+    public void Clear()
+    {
+        foreach (var target in targets.Values)
+        {
+            if (target is MemoryTarget memoryTarget)
+            {
+                memoryTarget.Clear();
+            }
+        }
+    }
+
+    private void LogInternal(string source, string content, LogLevel level)
+    {
+        var message = new LogMessage(source, content, level);
+        
+        foreach (var target in targets.Values)
+        {
+            if (target.ShouldLog(message))
+            {
+                target.Log(message);
+            }
+        }
+
+        MessageLogged?.Invoke(message);
+    }
+}
+
+public class ConsoleTarget : ILogTarget
+{
+    public LogLevel MinLevel { get; }
+
+    public ConsoleTarget(LogLevel minLevel)
+    {
+        MinLevel = minLevel;
+    }
+
+    public bool ShouldLog(LogMessage message)
+    {
+        return message.Level >= MinLevel;
+    }
+
+    public void Log(LogMessage message)
+    {
+        var originalColor = Console.ForegroundColor;
+        var originalBgColor = Console.BackgroundColor;
+
+        SetColors(message.Level);
+        
+        string levelStr = message.Level switch
+        {
+            LogLevel.Debug => "DEBUG",
+            LogLevel.Info => "INFO",
+            LogLevel.Warning => "WARNING",
+            LogLevel.Error => "ERROR",
+            _ => "UNKNOWN"
+        };
+
+        Console.WriteLine($"[{levelStr}] {message.Timestamp:yyyy-MM-dd HH:mm:ss} | {message.Content}");
+        
+        Console.ForegroundColor = originalColor;
+        Console.BackgroundColor = originalBgColor;
+    }
+
+    private void SetColors(LogLevel level)
+    {
+        switch (level)
+        {
+            case LogLevel.Debug:
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.BackgroundColor = ConsoleColor.Gray;
+                break;
+            case LogLevel.Info:
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.BackgroundColor = ConsoleColor.Black;
+                break;
+            case LogLevel.Warning:
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.BackgroundColor = ConsoleColor.Yellow;
+                break;
+            case LogLevel.Error:
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.BackgroundColor = ConsoleColor.Red;
+                break;
+        }
+    }
+}
+
+public class MemoryTarget : ILogTarget
+{
+    public LogLevel MinLevel { get; }
+    public int MaxMessages { get; }
+    public List<LogMessage> Messages { get; private set; }
+
+    public MemoryTarget(LogLevel minLevel, int maxMessages = 100)
+    {
+        MinLevel = minLevel;
+        MaxMessages = maxMessages;
+        Messages = new List<LogMessage>();
+    }
+
+    public bool ShouldLog(LogMessage message)
+    {
+        return message.Level >= MinLevel;
+    }
+
+    public void Log(LogMessage message)
+    {
+        Messages.Add(message);
+        
+        // Ограничение количества сообщений
+        if (Messages.Count > MaxMessages)
+        {
+            Messages.RemoveAt(0);
+        }
+    }
+
+    public List<LogMessage> GetMessages()
+    {
+        return new List<LogMessage>(Messages);
+    }
+
+    public void Clear()
+    {
+        Messages.Clear();
+    }
+}
+
+public class Program
+{
+    static void Main()
+    {
+        Console.OutputEncoding = System.Text.Encoding.Unicode;
+
+        var logger = new Logger();
+
+        // Создаем целевые места
+        var consoleTarget = new ConsoleTarget(LogLevel.Warning);
+        var memoryTarget = new MemoryTarget(LogLevel.Debug, 100); // Храним 100 сообщений
+
+        // Добавляем цели
+        logger.AddTarget("Консоль", consoleTarget);
+        logger.AddTarget("Память", memoryTarget);
+
+        // Подписываемся на события
+        logger.MessageLogged += (message) =>
+            Console.WriteLine($"📝 Записано сообщение: {message.Source} {message.Content}");
+
+        Console.WriteLine("=== Тест 1: Разные уровни логирования ===");
+        logger.Debug("Тест1", "Отладочное сообщение");
+        logger.Info("Тест1", "Информационное сообщение");
+        logger.Warning("Тест1", "Предупреждение");
+        logger.Error("Тест1", "Ошибка в системе");
+
+        // Небольшая задержка для различия временных меток
+        Thread.Sleep(100);
+
+        Console.WriteLine("\n=== Тест 2: Сообщения с разными источниками ===");
+        logger.Info("Тест2", "Запуск приложения");
+        logger.Info("Тест2", "Подключение к базе данных");
+        logger.Warning("Тест2", "Медленное соединение");
+
+        Thread.Sleep(100);
+
+        Console.WriteLine("\n=== Тест 3: Проверка ограничения памяти ===");
+        for (int i = 0; i < 105; i++)
+        {
+            logger.Info("Тест3", $"Тестовое сообщение {i + 1}");
+        }
+
+        Console.WriteLine($"\nСообщений в памяти: {memoryTarget.GetMessages().Count}");
+        Console.WriteLine($"Последнее сообщение в памяти: {memoryTarget.Messages[memoryTarget.Messages.Count - 1].Content}");
+
+        Console.WriteLine("\n=== Тест 4: Очистка логов ===");
+        logger.Clear();
+        Console.WriteLine("Логи очищены");
+        Console.WriteLine($"Сообщений в памяти: {memoryTarget.GetMessages().Count}");
+    }
+}
