@@ -1,0 +1,294 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+
+// Уровни логирования
+public enum LogLevel
+{
+    Debug,   // Отладочный уровень
+    Info,    // Информационный уровень
+    Warning, // Уровень предупреждений
+    Error    // Уровень ошибок
+}
+
+// Класс для представления сообщения лога
+public class LogMessage
+{
+    public string Content { get; set; }     // Содержимое сообщения
+    public LogLevel Level { get; set; }     // Уровень важности
+    public DateTime Timestamp { get; set; } // Временная метка
+    public string Source { get; set; }      // Источник сообщения
+
+    public LogMessage(string source, string content, LogLevel level)
+    {
+        Source = source;
+        Content = content;
+        Level = level;
+        Timestamp = DateTime.Now; // Устанавливаем текущее время
+    }
+}
+
+// Интерфейс для целевых мест логирования
+public interface ILogTarget
+{
+    // Метод для записи сообщения
+    void Log(LogMessage message);
+    
+    // Метод для проверки, должно ли сообщение быть записано в этот target
+    bool ShouldLog(LogMessage message);
+}
+
+// Основной класс логирования
+public class Logger
+{
+    // Словарь для хранения целевых мест (имя -> target)
+    private Dictionary<string, ILogTarget> targets = new Dictionary<string, ILogTarget>();
+
+    // Событие, возникающее при успешной записи сообщения
+    public event Action<LogMessage> MessageLogged;
+
+    // Добавление целевого места
+    public void AddTarget(string name, ILogTarget target)
+    {
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Имя не может быть пустым", nameof(name));
+        
+        targets[name] = target; // Добавляем или заменяем target
+    }
+
+    // Удаление целевого места
+    public void RemoveTarget(string name)
+    {
+        targets.Remove(name);
+    }
+
+    // Метод для записи отладочного сообщения
+    public void Debug(string source, string content)
+    {
+        LogInternal(source, content, LogLevel.Debug);
+    }
+
+    // Метод для записи информационного сообщения
+    public void Info(string source, string content)
+    {
+        LogInternal(source, content, LogLevel.Info);
+    }
+
+    // Метод для записи предупреждения
+    public void Warning(string source, string content)
+    {
+        LogInternal(source, content, LogLevel.Warning);
+    }
+
+    // Метод для записи ошибки
+    public void Error(string source, string content)
+    {
+        LogInternal(source, content, LogLevel.Error);
+    }
+
+    // Метод для очистки всех логов
+    public void Clear()
+    {
+        // Очищаем только MemoryTarget (консоль очистить нельзя)
+        foreach (var target in targets.Values)
+        {
+            if (target is MemoryTarget memoryTarget)
+            {
+                memoryTarget.Clear();
+            }
+        }
+    }
+
+    // Внутренний метод для обработки логирования
+    private void LogInternal(string source, string content, LogLevel level)
+    {
+        var message = new LogMessage(source, content, level);
+        
+        // Отправляем сообщение во все целевые места
+        foreach (var target in targets.Values)
+        {
+            if (target.ShouldLog(message)) // Проверяем, должен ли target логировать это сообщение
+            {
+                target.Log(message); // Записываем сообщение
+            }
+        }
+
+        // Вызываем событие успешной записи
+        MessageLogged?.Invoke(message);
+    }
+}
+
+// Целевое место для вывода в консоль
+public class ConsoleTarget : ILogTarget
+{
+    public LogLevel MinLevel { get; } // Минимальный уровень для логирования
+
+    public ConsoleTarget(LogLevel minLevel)
+    {
+        MinLevel = minLevel;
+    }
+
+    // Проверяем, должно ли сообщение быть записано (уровень >= минимального)
+    public bool ShouldLog(LogMessage message)
+    {
+        return message.Level >= MinLevel;
+    }
+
+    // Запись сообщения в консоль с цветовым оформлением
+    public void Log(LogMessage message)
+    {
+        // Сохраняем оригинальные цвета консоли
+        var originalColor = Console.ForegroundColor;
+        var originalBgColor = Console.BackgroundColor;
+
+        // Устанавливаем цвета в зависимости от уровня
+        SetColors(message.Level);
+        
+        // Преобразуем уровень в строковое представление
+        string levelStr = message.Level switch
+        {
+            LogLevel.Debug => "DEBUG",
+            LogLevel.Info => "INFO",
+            LogLevel.Warning => "WARNING",
+            LogLevel.Error => "ERROR",
+            _ => "UNKNOWN"
+        };
+
+        // Выводим сообщение в формате: [УРОВЕНЬ] ГГГГ-ММ-ДД ЧЧ:ММ:СС | Текст
+        Console.WriteLine($"[{levelStr}] {message.Timestamp:yyyy-MM-dd HH:mm:ss} | {message.Content}");
+        
+        // Восстанавливаем оригинальные цвета
+        Console.ForegroundColor = originalColor;
+        Console.BackgroundColor = originalBgColor;
+    }
+
+    // Установка цветов в зависимости от уровня логирования
+    private void SetColors(LogLevel level)
+    {
+        switch (level)
+        {
+            case LogLevel.Debug:
+                Console.ForegroundColor = ConsoleColor.Blue;    // Синий текст
+                Console.BackgroundColor = ConsoleColor.Gray;    // Серый фон
+                break;
+            case LogLevel.Info:
+                Console.ForegroundColor = ConsoleColor.White;   // Белый текст
+                Console.BackgroundColor = ConsoleColor.Black;   // Черный фон
+                break;
+            case LogLevel.Warning:
+                Console.ForegroundColor = ConsoleColor.Black;   // Черный текст
+                Console.BackgroundColor = ConsoleColor.Yellow;  // Желтый фон
+                break;
+            case LogLevel.Error:
+                Console.ForegroundColor = ConsoleColor.White;   // Белый текст
+                Console.BackgroundColor = ConsoleColor.Red;     // Красный фон
+                break;
+        }
+    }
+}
+
+// Целевое место для хранения сообщений в памяти
+public class MemoryTarget : ILogTarget
+{
+    public LogLevel MinLevel { get; }     // Минимальный уровень для логирования
+    public int MaxMessages { get; }       // Максимальное количество сообщений
+    public List<LogMessage> Messages { get; private set; } // Список сообщений
+
+    public MemoryTarget(LogLevel minLevel, int maxMessages = 100)
+    {
+        MinLevel = minLevel;
+        MaxMessages = maxMessages;
+        Messages = new List<LogMessage>();
+    }
+
+    // Проверяем, должно ли сообщение быть записано
+    public bool ShouldLog(LogMessage message)
+    {
+        return message.Level >= MinLevel;
+    }
+
+    // Запись сообщения в память с ограничением количества
+    public void Log(LogMessage message)
+    {
+        Messages.Add(message);
+        
+        // Ограничение количества сообщений - удаляем самые старые
+        if (Messages.Count > MaxMessages)
+        {
+            Messages.RemoveAt(0); // Удаляем первое (самое старое) сообщение
+        }
+    }
+
+    // Получение копии списка сообщений
+    public List<LogMessage> GetMessages()
+    {
+        return new List<LogMessage>(Messages); // Возвращаем копию для защиты от изменений
+    }
+
+    // Очистка всех сообщений из памяти
+    public void Clear()
+    {
+        Messages.Clear();
+    }
+}
+
+public class Program
+{
+    static void Main()
+    {
+        // Устанавливаем кодировку для поддержки Unicode символов (эмодзи)
+        Console.OutputEncoding = System.Text.Encoding.Unicode;
+
+        // Создаем основной логгер
+        var logger = new Logger();
+
+        // Создаем целевые места для логирования:
+        // - Консоль: логирует только Warning и Error
+        // - Память: логирует все уровни (Debug и выше), хранит 100 сообщений
+        var consoleTarget = new ConsoleTarget(LogLevel.Warning);
+        var memoryTarget = new MemoryTarget(LogLevel.Debug, 100);
+
+        // Добавляем целевые места в логгер
+        logger.AddTarget("Консоль", consoleTarget);
+        logger.AddTarget("Память", memoryTarget);
+
+        // Подписываемся на событие записи сообщений
+        logger.MessageLogged += (message) =>
+            Console.WriteLine($"📝 Записано сообщение: {message.Source} {message.Content}");
+
+        // Тест 1: Проверка разных уровней логирования
+        Console.WriteLine("=== Тест 1: Разные уровни логирования ===");
+        logger.Debug("Тест1", "Отладочное сообщение");      // Не покажется в консоли (уровень ниже Warning)
+        logger.Info("Тест1", "Информационное сообщение");   // Не покажется в консоли (уровень ниже Warning)
+        logger.Warning("Тест1", "Предупреждение");          // Покажется в консоли
+        logger.Error("Тест1", "Ошибка в системе");          // Покажется в консоли
+
+        // Небольшая задержка для различия временных меток в следующих тестах
+        Thread.Sleep(100);
+
+        // Тест 2: Сообщения с разными источниками
+        Console.WriteLine("\n=== Тест 2: Сообщения с разными источниками ===");
+        logger.Info("Тест2", "Запуск приложения");
+        logger.Info("Тест2", "Подключение к базе данных");
+        logger.Warning("Тест2", "Медленное соединение");    // Покажется в консоли
+
+        Thread.Sleep(100);
+
+        // Тест 3: Проверка ограничения памяти (ротация логов)
+        Console.WriteLine("\n=== Тест 3: Проверка ограничения памяти ===");
+        for (int i = 0; i < 105; i++)
+        {
+            logger.Info("Тест3", $"Тестовое сообщение {i + 1}");
+        }
+
+        // Проверяем, что в памяти осталось только 100 сообщений (последние)
+        Console.WriteLine($"\nСообщений в памяти: {memoryTarget.GetMessages().Count}");
+        Console.WriteLine($"Последнее сообщение в памяти: {memoryTarget.Messages[memoryTarget.Messages.Count - 1].Content}");
+
+        // Тест 4: Очистка логов
+        Console.WriteLine("\n=== Тест 4: Очистка логов ===");
+        logger.Clear();
+        Console.WriteLine("Логи очищены");
+        Console.WriteLine($"Сообщений в памяти: {memoryTarget.GetMessages().Count}");
+    }
+}
