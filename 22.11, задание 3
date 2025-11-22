@@ -1,0 +1,47 @@
+using System;
+using System.Linq;
+
+class Program
+{
+    class Worker
+    {
+        public string Name;
+        public int Salary;
+        
+        public Worker(string Name, int Salary)
+        {
+            this.Name = Name;
+            this.Salary = Salary;
+        }
+    }
+    
+    static void Main()
+    {
+        // Исходная коллекция
+        var arr = new Worker[]  
+        {  
+            new Worker("Петров", 100),
+            new Worker("Сидоров", 200),
+            new Worker("Петров", 130)
+        };
+        
+        // Группировка по фамилии и вычисление общей суммы зарплат
+        var result = arr
+            .GroupBy(w => w.Name)
+            .Select(g => new
+            {
+                Фамилия = g.Key,
+                Сумма = g.Sum(w => w.Salary)
+            });
+        
+        // Вывод результата
+        Console.WriteLine("Итоговая коллекция:");
+        Console.WriteLine("{Фамилия, Сумма всех Сумм для данной фамилии}");
+        Console.WriteLine();
+        
+        foreach (var item in result)
+        {
+            Console.WriteLine($"Фамилия: {item.Фамилия}, Общая сумма: {item.Сумма}");
+        }
+    }
+}
