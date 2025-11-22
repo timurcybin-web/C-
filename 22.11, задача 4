@@ -1,0 +1,46 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        // Исходный массив
+        var arr = new int[] {1, 3, 5, 8, 9, 1, 6, 4, 7, 8, 9, 2, 5, 2, 7, 8, 0, 3, 5, 6, 4, 2, 7, 8, 9, 4, 3, 5, 6};
+        
+        // Находим элементы, которые встречаются ровно 3 раза
+        var result = arr
+            .GroupBy(x => x)
+            .Where(g => g.Count() == 3)
+            .Select(g => g.Key)
+            .OrderBy(x => x); // Сортируем для удобства чтения
+        
+        // Вывод результата
+        Console.WriteLine("Исходный массив:");
+        Console.WriteLine(string.Join(", ", arr));
+        Console.WriteLine($"\nОбщее количество элементов: {arr.Length}");
+        
+        Console.WriteLine("\nЭлементы, встречающиеся ровно 3 раза:");
+        if (result.Any())
+        {
+            Console.WriteLine(string.Join(", ", result));
+        }
+        else
+        {
+            Console.WriteLine("Таких элементов нет");
+        }
+        
+        // Дополнительная информация для проверки
+        Console.WriteLine("\nЧастота всех элементов:");
+        var frequency = arr
+            .GroupBy(x => x)
+            .Select(g => new { Number = g.Key, Count = g.Count() })
+            .OrderBy(x => x.Number);
+            
+        foreach (var item in frequency)
+        {
+            Console.WriteLine($"Число {item.Number}: {item.Count} раз");
+        }
+    }
+}
